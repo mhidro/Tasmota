@@ -16,7 +16,7 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-
+#define USE_WEBSERVER
 #ifdef USE_WEBSERVER
 /*********************************************************************************************\
  * Web server and WiFi Manager
@@ -523,7 +523,8 @@ String AddWebCommand(const char* command, const char* arg, const char* dflt) {
 }
 
 static bool WifiIsInManagerMode(){
-  return (HTTP_MANAGER == Web.state || HTTP_MANAGER_RESET_ONLY == Web.state);
+  Web.state = HTTP_ADMIN;
+  return false;
 }
 
 void ShowWebSource(uint32_t source)
@@ -621,6 +622,8 @@ void StartWebserver(int type)
       XdrvXsnsCall(FUNC_WEB_ADD_HANDLER);
 #endif  // Not FIRMWARE_MINIMAL
 
+      Web.state = HTTP_ADMIN;
+      Web.initial_config = true;
       if (!Web.initial_config) {
         Web.initial_config = (!strlen(SettingsText(SET_STASSID1)) && !strlen(SettingsText(SET_STASSID2)));
         if (Web.initial_config) { AddLog(LOG_LEVEL_DEBUG, PSTR(D_LOG_HTTP "Blank Device - Initial Configuration")); }
@@ -636,6 +639,7 @@ void StartWebserver(int type)
     TasmotaGlobal.rules_flag.http_init = 1;
     Web.state = type;
   }
+  Web.state = HTTP_ADMIN;
 }
 
 void StopWebserver(void)
@@ -1071,6 +1075,9 @@ void WebRestart(uint32_t type) {
       WSContentSpaceButton(BUTTON_MAIN);
     }
   }
+
+  Web.state = HTTP_ADMIN;
+  WSContentSpaceButton(BUTTON_MAIN);
   WSContentStop();
 
   if (!(2 == type)) {
@@ -1316,7 +1323,7 @@ void HandleRoot(void)
 #endif  // ESP32
     WSContentButton(BUTTON_CONSOLE);
 #else
-    WSContentSpaceButton(BUTTON_CONFIGURATION);
+    WSContentSpaceButton(BUTTON_CONFIGURATION);           //// @@@1
     WSContentButton(BUTTON_INFORMATION);
     WSContentButton(BUTTON_FIRMWARE_UPGRADE);
     if (!WebUseManagementSubmenu()) {
